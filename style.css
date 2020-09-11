@@ -30,12 +30,9 @@ a:hover {
   text-decoration: underline;
 }
 
-
 .hidden {
   display: none;
 }
-
-
 
 nav {
   display: flex;
@@ -210,7 +207,6 @@ form > hr {
 #user-profile > * {
   margin: 10px 0;
 }
-
 
 /** responsive queries for tightening things up for mobile. */
 

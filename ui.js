@@ -1,4 +1,4 @@
-$(async function() {
+$(async function () {
   // cache some selectors we'll be using quite a bit
   const $allStoriesList = $("#all-articles-list");
   const $submitForm = $("#submit-form");
@@ -8,6 +8,7 @@ $(async function() {
   const $ownStories = $("#my-articles");
   const $navLogin = $("#nav-login");
   const $navLogOut = $("#nav-logout");
+  const $navSubmit = $("#nav-submit");
 
   // global storyList variable
   let storyList = null;
@@ -22,7 +23,7 @@ $(async function() {
    *  If successfully we will setup the user instance
    */
 
-  $loginForm.on("submit", async function(evt) {
+  $loginForm.on("submit", async function (evt) {
     evt.preventDefault(); // no page-refresh on submit
 
     // grab the username and password
@@ -42,7 +43,7 @@ $(async function() {
    *  If successfully we will setup a new user instance
    */
 
-  $createAccountForm.on("submit", async function(evt) {
+  $createAccountForm.on("submit", async function (evt) {
     evt.preventDefault(); // no page refresh
 
     // grab the required fields
@@ -57,11 +58,27 @@ $(async function() {
     loginAndSubmitForm();
   });
 
+  $submitForm.on("submit", async function (e) {
+    e.preventDefault();
+    let storyObj = {
+      token: currentUser.loginToken,
+      story: {
+        author: $("#author").val(),
+        title: $("#title").val(),
+        url: $("#url").val(),
+      },
+    };
+    await new StoryList().addStory(currentUser, storyObj);
+    await generateStories();
+    $submitForm.trigger("reset");
+    $submitForm.slideToggle();
+  });
+
   /**
    * Log Out Functionality
    */
 
-  $navLogOut.on("click", function() {
+  $navLogOut.on("click", function () {
     // empty out local storage
     localStorage.clear();
     // refresh the page, clearing memory
@@ -72,18 +89,23 @@ $(async function() {
    * Event Handler for Clicking Login
    */
 
-  $navLogin.on("click", function() {
+  $navLogin.on("click", function () {
     // Show the Login and Create Account Forms
     $loginForm.slideToggle();
     $createAccountForm.slideToggle();
+
     $allStoriesList.toggle();
   });
-
+  // Event handler for clicking submit
+  $navSubmit.on("click", function () {
+    // show the submit/create new story form
+    $submitForm.slideToggle();
+  });
   /**
    * Event handler for Navigation to Homepage
    */
 
-  $("body").on("click", "#nav-all", async function() {
+  $("body").on("click", "#nav-all", async function () {
     hideElements();
     await generateStories();
     $allStoriesList.show();
@@ -181,14 +203,15 @@ $(async function() {
       $filteredArticles,
       $ownStories,
       $loginForm,
-      $createAccountForm
+      $createAccountForm,
     ];
-    elementsArr.forEach($elem => $elem.hide());
+    elementsArr.forEach(($elem) => $elem.hide());
   }
 
   function showNavForLoggedInUser() {
     $navLogin.hide();
     $navLogOut.show();
+    $navSubmit.show();
   }
 
   /* simple function to pull the hostname from a URL */
