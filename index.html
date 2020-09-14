@@ -14,13 +14,21 @@
 <body>
   <nav>
     <b><a class="nav-link navbar-brand" href="#" id="nav-all">Hack or Snooze</a></b>
+    <section class="user-nav-links hidden">
+      <span> | </span>
+      <a class="nav-links" id="nav-submit" href="#">submit</a>
+      <span> | </span>
+      <a class="nav-links" id="nav-favorites" href="#">favorites</a>
+      <span> | </span>
+      <a class="nav-links" id="nav-stories" href="#">my stories</a>
+
+    </section>
     <a class="nav-link nav-right" href="#" id="nav-login">login/create user</a>
     <span class="nav-link nav-right hidden" id="nav-welcome">
       <a href="#" id="nav-user-profile"></a>
-
     </span>
-    <a class="hidden" id="nav-submit" href="#">submit</a>
-    <a class="hidden" id="nav-logout" href="#">
+
+    <a class="nav-link nav-right hidden" id="nav-logout" href="#">
       <small>(logout)</small>
     </a>
   </nav>
@@ -101,7 +109,7 @@
     </form>
 
   </section>
-  <section id="user-profile" class="container hidden">
+  <section id="user-profile" class="hidden">
     <h4>User Profile Info</h4>
     <section>
       <div id="profile-name">Name:</div>

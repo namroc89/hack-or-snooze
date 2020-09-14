@@ -58,6 +58,22 @@ class StoryList {
     // this function should return the newly created story so it can be used in
     // the script.js file where it will be appended to the DOM
   }
+
+  // Removing a story created by the logged in user
+  async removeStory(user, storyId) {
+    await axios.delete(
+      `https://hack-or-snooze-v3.herokuapp.com/stories/${storyId}`,
+      {
+        params: {
+          token: user.loginToken,
+        },
+      }
+    );
+    // use filter to find story who's ID we are removing
+    this.stories = this.stories.filter((story) => story.storyId !== storyId);
+    // remove story from users story list.
+    user.ownStories = user.ownStories.filter((s) => s.storyId !== storyId);
+  }
 }
 
 /**
@@ -167,6 +183,47 @@ class User {
       (s) => new Story(s)
     );
     return existingUser;
+  }
+
+  // function retreives data from the API, sets Instance properties from teh response.
+  async getUserDetails() {
+    const response = await axios.get(`${BASE_URL}/users/${this.username}`, {
+      params: {
+        token: this.loginToken,
+      },
+    });
+
+    this.name = response.data.user.name;
+    this.createdAt = response.data.user.createdAt;
+    this.updatedAt = response.data.user.updatedAt;
+
+    this.favorites = response.data.user.favorites.map((s) => new Story(s));
+    // this.ownStories = response.data.user.ownStories.map((s) => new Story(s));
+  }
+
+  async addFavorite(storyId) {
+    await axios.post(
+      `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
+      {
+        token: this.loginToken,
+      }
+    );
+
+    await this.getUserDetails();
+    return this;
+  }
+  async removeFavorite(storyId) {
+    await axios.delete(
+      `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
+      {
+        params: {
+          token: this.loginToken,
+        },
+      }
+    );
+
+    await this.getUserDetails();
+    return this;
   }
 }
 

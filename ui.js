@@ -9,6 +9,10 @@ $(async function () {
   const $navLogin = $("#nav-login");
   const $navLogOut = $("#nav-logout");
   const $navSubmit = $("#nav-submit");
+  const $navFav = $("#nav-favorites");
+  const $navStories = $("#nav-stories");
+  const $userNav = $(".user-nav-links");
+  const $favStories = $("#favorited-articles");
 
   // global storyList variable
   let storyList = null;
@@ -57,7 +61,7 @@ $(async function () {
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
   });
-
+  //  call the add story method and create object to be passed through, using the dom
   $submitForm.on("submit", async function (e) {
     e.preventDefault();
     let storyObj = {
@@ -69,9 +73,32 @@ $(async function () {
       },
     };
     await new StoryList().addStory(currentUser, storyObj);
+
+    // update the current list of stories with new story.
     await generateStories();
     $submitForm.trigger("reset");
     $submitForm.slideToggle();
+  });
+
+  // selecting favorites event handler
+  $(".articles-container").on("click", ".star", async function (evt) {
+    if (currentUser) {
+      const $target = $(evt.target);
+      const $storyLi = $target.closest("li");
+      const storyId = $storyLi.attr("id");
+
+      // check if item is already favorited
+      if ($target.hasClass("fas")) {
+        // remove from favorites
+        await currentUser.removeFavorite(storyId);
+        // make favorite star empty
+        $target.closest("i").toggleClass("fas far");
+      } else {
+        // the item is not currently favorited
+        await currentUser.addFavorite(storyId);
+        $target.closest("i").toggleClass("fas far");
+      }
+    }
   });
 
   /**
@@ -101,6 +128,21 @@ $(async function () {
     // show the submit/create new story form
     $submitForm.slideToggle();
   });
+
+  // Event Handeler for clicking navbar favorites.
+  $("body").on("click", "#nav-favorites", function () {
+    hideElements();
+    $allStoriesList.hide();
+    $("#favorited-articles").show();
+    createFaves();
+  });
+  // Event Handeler for clicking navbar my stories.
+  $("body").on("click", "#nav-stories", function () {
+    hideElements();
+    $allStoriesList.hide();
+    $("#my-articles").show();
+    createOwnStories();
+  });
   /**
    * Event handler for Navigation to Homepage
    */
@@ -108,6 +150,22 @@ $(async function () {
   $("body").on("click", "#nav-all", async function () {
     hideElements();
     await generateStories();
+    $allStoriesList.show();
+  });
+
+  $ownStories.on("click", ".trash-can", async function (evt) {
+    // retrieve the ID for the story
+    const $closestLi = $(evt.target).closest("li");
+    const storyId = $closestLi.attr("id");
+
+    // remove the story from the user
+    await storyList.removeStory(currentUser, storyId);
+
+    await generateStories();
+
+    hideElements();
+
+    // show story list again
     $allStoriesList.show();
   });
 
@@ -176,12 +234,22 @@ $(async function () {
    * A function to render HTML for an individual Story instance
    */
 
-  function generateStoryHTML(story) {
+  function generateStoryHTML(story, usersStory) {
     let hostName = getHostName(story.url);
-
+    let star = isFavorite(story) ? "fas" : "far";
+    // add trash can icon if it's current users story
+    const trashCan = usersStory
+      ? `<span class="trash-can">
+          <i class="fas fa-trash-alt"></i>
+        </span>`
+      : "";
     // render story markup
     const storyMarkup = $(`
       <li id="${story.storyId}">
+      ${trashCan}
+      <span class="star">
+          <i class="${star} fa-star"></i>
+        </span>
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
@@ -194,6 +262,25 @@ $(async function () {
     return storyMarkup;
   }
 
+  // create stories for the favorites list
+  function createFaves() {
+    $favStories.empty();
+
+    for (let story of currentUser.favorites) {
+      let favHtml = generateStoryHTML(story, false, true);
+      $favStories.append(favHtml);
+    }
+  }
+
+  function createOwnStories() {
+    $ownStories.empty();
+
+    for (let story of currentUser.ownStories) {
+      let ownStoriesHtml = generateStoryHTML(story, true);
+      $ownStories.append(ownStoriesHtml);
+    }
+  }
+
   /* hide all elements in elementsArr */
 
   function hideElements() {
@@ -204,6 +291,7 @@ $(async function () {
       $ownStories,
       $loginForm,
       $createAccountForm,
+      $favStories,
     ];
     elementsArr.forEach(($elem) => $elem.hide());
   }
@@ -211,7 +299,15 @@ $(async function () {
   function showNavForLoggedInUser() {
     $navLogin.hide();
     $navLogOut.show();
-    $navSubmit.show();
+    $userNav.show();
+  }
+
+  function isFavorite(story) {
+    let favStoryIds = new Set();
+    if (currentUser) {
+      favStoryIds = new Set(currentUser.favorites.map((obj) => obj.storyId));
+    }
+    return favStoryIds.has(story.storyId);
   }
 
   /* simple function to pull the hostname from a URL */
